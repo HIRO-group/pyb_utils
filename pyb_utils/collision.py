@@ -25,7 +25,7 @@ class IndexedCollisionObject:
     link_uid: int
 
 
-def index_collision_pairs(physics_uid, bodies, named_collision_pairs):
+def index_collision_pairs(physics_uid, bodies, named_collision_pairs, add_base_link=False):
     """Convert a list of named collision pairs to indexed collision pairs.
 
     In other words, convert named bodies and links to the indexes used by
@@ -35,6 +35,7 @@ def index_collision_pairs(physics_uid, bodies, named_collision_pairs):
       physics_uid: Index of the PyBullet physics server to use.
       bodies: dict with body name keys and corresponding indices as values
       named_collision_pairs: a list of 2-tuples of NamedCollisionObject
+      add_base_link
 
     Returns: a list of 2-tuples of IndexedCollisionObject
     """
@@ -45,10 +46,18 @@ def index_collision_pairs(physics_uid, bodies, named_collision_pairs):
     for name, uid in bodies.items():
         body_link_map[name] = {}
         n = pyb.getNumJoints(uid, physics_uid)
+
+        if n == 0 or add_base_link:
+            info = pyb.getBodyInfo(uid, physics_uid)
+            link_name = info[0].decode('utf-8')
+            body_link_map[name][link_name] = n  # TODO: fix?
+
         for i in range(n):
             info = pyb.getJointInfo(uid, i, physics_uid)
             link_name = info[12].decode("utf-8")
             body_link_map[name][link_name] = i
+
+    print(add_base_link, body_link_map)
 
     def _index_named_collision_object(obj):
         """Map body and link names to corresponding indices."""
@@ -70,11 +79,12 @@ def index_collision_pairs(physics_uid, bodies, named_collision_pairs):
 
 
 class CollisionDetector:
-    def __init__(self, col_id, bodies, named_collision_pairs):
+    def __init__(self, col_id, bodies, named_collision_pairs, add_base_link=False):
         self.col_id = col_id
         self.robot_id = bodies["robot"]
+        print(add_base_link)
         self.indexed_collision_pairs = index_collision_pairs(
-            self.col_id, bodies, named_collision_pairs
+            self.col_id, bodies, named_collision_pairs, add_base_link
         )
 
     def compute_distances(self, q, max_distance=1.0):

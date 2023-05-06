@@ -57,8 +57,6 @@ def index_collision_pairs(physics_uid, bodies, named_collision_pairs, add_base_l
             link_name = info[12].decode("utf-8")
             body_link_map[name][link_name] = i
 
-    print(add_base_link, body_link_map)
-
     def _index_named_collision_object(obj):
         """Map body and link names to corresponding indices."""
         body_uid = bodies[obj.body_name]
